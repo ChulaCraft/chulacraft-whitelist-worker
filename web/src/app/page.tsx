@@ -1,8 +1,9 @@
-import Link from "next/link";
 import { AuthButton } from "@/components/auth-button";
 import { ArrowIcon, ShieldIcon } from "@/components/icons";
+import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { ServerAddressCard } from "@/components/server-address-card";
+import { discordCommunityUrl } from "@/lib/site-links";
 
 const serverAddress = process.env.NEXT_PUBLIC_MINECRAFT_SERVER_ADDRESS;
 
@@ -15,7 +16,7 @@ export default function HomePage() {
         <div className="eyebrow"><span /> JAVA EDITION SURVIVAL SERVER</div>
         <h1>ADVENTURE.<br />BUILD.<br /><em>TOGETHER.</em></h1>
         <p className="hero-copy">Join Chulacraft with your friends. Sign in with Discord, register your Java Edition username, and we’ll handle the whitelist.</p>
-        <div className="hero-actions"><AuthButton /><Link className="button button-outline" href="#how-it-works">How it works <ArrowIcon /></Link></div>
+        <div className="hero-actions"><AuthButton /><a className="button button-outline" href={discordCommunityUrl} target="_blank" rel="noreferrer">Our community Discord <ArrowIcon /></a></div>
         <div className="trust-row"><ShieldIcon /><span>Your Discord identity and Minecraft profile are stored only to manage your server registration.</span></div>
       </div>
       <ServerAddressCard address={serverAddress} />
@@ -28,6 +29,6 @@ export default function HomePage() {
         <article><b>03</b><div className="step-icon">✓</div><h3>Wait for confirmation</h3><p>We’ll tell you as soon as the server has added you to the whitelist.</p></article>
       </div>
     </section>
-    <footer><span>© {new Date().getFullYear()} Chulacraft</span><span>Java Edition only</span></footer>
+    <SiteFooter />
   </main>;
 }

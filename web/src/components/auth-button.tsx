@@ -26,7 +26,7 @@ export function AuthButton({ compact = false }: { compact?: boolean }) {
     }
   }
 
-  return <button className={compact ? "button button-outline" : "button button-discord"} onClick={signIn} disabled={loading}>
-    <DiscordIcon /> {loading ? "Opening Discord…" : compact ? "Login" : "Continue with Discord"}
+  return <button className={compact ? "button button-header-signup" : "button button-discord"} onClick={signIn} disabled={loading}>
+    {!compact && <DiscordIcon />} {loading ? "Opening Discord…" : compact ? "Sign Up Now!" : "Sign Up with Discord"}
   </button>;
 }
