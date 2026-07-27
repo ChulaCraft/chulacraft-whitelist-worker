@@ -20,6 +20,8 @@ I chose `1.21.11` instead of the newest Paper `26.2` because ProtectionStones is
 ProtectionStones and spark are downloaded through Spiget resource IDs in the Dockerfile. The rest are downloaded from Modrinth using `plugins/modrinth-projects.txt`.
 
 The Compose file maps the Minecraft server to the standard host port `25565`. `kaikub` is made an operator automatically at startup. Players on the local network can connect to `192.168.100.7:25565`.
+After the server has no players for 60 seconds, Minecraft pauses its game ticks.
+The Docker container stays running and automatically resumes when a player joins.
 
 ## Run
 
@@ -62,6 +64,7 @@ Create a `.env` file if you want to change runtime settings:
 ```env
 MEMORY=6G
 MAX_PLAYERS=20
+PAUSE_WHEN_EMPTY_SECONDS=60
 RCON_PASSWORD=change-this-password
 MOTD=Hard Survival
 TZ=Asia/Bangkok

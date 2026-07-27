@@ -15,6 +15,7 @@ services:
       TZ: "${TZ:-Asia/Bangkok}"
       MEMORY: "${MEMORY:-4G}"
       MAX_PLAYERS: "${MAX_PLAYERS:-20}"
+      PAUSE_WHEN_EMPTY_SECONDS: "${PAUSE_WHEN_EMPTY_SECONDS:-60}"
       RCON_PASSWORD: "${RCON_PASSWORD:?Set RCON_PASSWORD in .env}"
       OPS: "${OPS:-kaikub}"
       MOTD: "${MOTD:-Paper 1.21.11 Hard Survival}"
