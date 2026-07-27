@@ -1,0 +1,53 @@
+services:
+  minecraft:
+    build: .
+    image: local/paper-minecraft:1.21.11
+    container_name: minecraft-paper
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    ports:
+      - "${MINECRAFT_PORT:-25565}:25565"
+      - "127.0.0.1:25575:25575"
+      # Uncomment if you add Simple Voice Chat later.
+      # - "24454:24454/udp"
+    environment:
+      TZ: "${TZ:-Asia/Bangkok}"
+      MEMORY: "${MEMORY:-4G}"
+      MAX_PLAYERS: "${MAX_PLAYERS:-20}"
+      RCON_PASSWORD: "${RCON_PASSWORD:?Set RCON_PASSWORD in .env}"
+      OPS: "${OPS:-kaikub}"
+      MOTD: "${MOTD:-Paper 1.21.11 Hard Survival}"
+      ENABLE_WHITELIST: "TRUE"
+      ENFORCE_WHITELIST: "TRUE"
+    volumes:
+      - ./data:/data
+      - ./plugins/modrinth-projects.txt:/extras/modrinth-projects.txt:ro
+    healthcheck:
+      test: ["CMD", "mc-health"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 90s
+
+  whitelist-sync:
+    build:
+      context: ./whitelist-worker
+    restart: unless-stopped
+    depends_on:
+      minecraft:
+        condition: service_healthy
+    environment:
+      SUPABASE_URL: "${SUPABASE_URL:?Set SUPABASE_URL in .env}"
+      SUPABASE_SECRET_KEY: "${SUPABASE_SECRET_KEY:-}"
+      SUPABASE_SERVICE_ROLE_KEY: "${SUPABASE_SERVICE_ROLE_KEY:-}"
+      RCON_HOST: minecraft
+      RCON_PORT: 25575
+      RCON_PASSWORD: "${RCON_PASSWORD:?Set RCON_PASSWORD in .env}"
+      POLL_INTERVAL_MS: "${WHITELIST_SYNC_POLL_INTERVAL_MS:-8000}"
+    healthcheck:
+      test: ["CMD", "node", "/app/healthcheck.cjs"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s

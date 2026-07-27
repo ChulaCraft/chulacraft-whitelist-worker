@@ -1,0 +1,490 @@
+For your Minecraft registration website, I’d design it as a **small server portal**, not just a single username form.
+
+## 1. Landing page
+
+The landing page should answer four questions immediately:
+
+* What is this server?
+* Why should I join?
+* How do I register?
+* Is the server online?
+
+### Hero section
+
+```text
+Ratchaphon Minecraft Server
+
+Survival multiplayer for CEDT friends.
+Build, trade, explore, and play together.
+
+[ Register to Join ]   [ Copy Server IP ]
+
+mc.ratchaphon.com
+● Server Online — 6 / 30 players
+```
+
+Show:
+
+* Server logo
+* Minecraft landscape or screenshot
+* Server IP with copy button
+* Java Edition version, such as `1.21.4`
+* Current online status
+* Player count
+* Main registration button
+
+---
+
+## 2. Server information
+
+A simple card section:
+
+| Information     | Example        |
+| --------------- | -------------- |
+| Edition         | Minecraft Java |
+| Version         | Paper 1.21.4   |
+| Game mode       | Survival       |
+| Difficulty      | Hard           |
+| Maximum players | 30             |
+| Whitelist       | Required       |
+| Server location | Thailand       |
+
+You can also show features such as:
+
+* Land protection
+* Player economy
+* Jobs system
+* Player shops
+* Community events
+* Regular backups
+
+Avoid showing technical details like the RCON port, machine IP, database, or server operating system.
+
+---
+
+## 3. Registration flow
+
+The registration page should be very simple.
+
+### Step 1 — Sign in
+
+Recommended options:
+
+```text
+Continue with Discord
+Continue with Google
+```
+
+Discord is better for a community Minecraft server because you can identify members and send announcements later.
+
+### Step 2 — Enter Minecraft username
+
+```text
+Minecraft Java Username
+[ kaikub____________ ]
+
+Username must be 3–16 characters.
+Letters, numbers, and underscores only.
+```
+
+Also include:
+
+* Minecraft Java Edition only notice
+* Checkbox confirming the username belongs to them
+* Server rules agreement
+* Register button
+
+### Step 3 — Registration status
+
+After submission:
+
+```text
+Registration received
+
+Minecraft username: kaikub
+Status: Waiting for approval
+
+You will be able to join after an admin approves your request.
+```
+
+Or for automatic approval:
+
+```text
+You are now whitelisted!
+
+Server IP: mc.ratchaphon.com
+Version: Minecraft Java 1.21.4
+
+[ Copy Server IP ]
+```
+
+---
+
+## 4. Minecraft account verification
+
+A major problem is that someone could register another player’s username.
+
+You have three possible verification levels.
+
+### Basic
+
+The user enters their username with no ownership verification.
+
+Good for a small friend group.
+
+### Discord verification
+
+Require users to join your Discord and connect their Discord account.
+
+```text
+Discord: kaikub#1234
+Minecraft: kaikub
+```
+
+An admin approves the connection.
+
+### In-game verification
+
+Best for more serious servers.
+
+The website generates a code:
+
+```text
+Verification code: CEDT-4821
+```
+
+The player temporarily joins a verification server or uses a Discord bot command:
+
+```text
+/verify CEDT-4821
+```
+
+For your private 30-player server, Discord login plus admin approval is probably enough.
+
+---
+
+## 5. Registration dashboard
+
+After logging in, players should see:
+
+```text
+Welcome, Kaikub
+
+Minecraft account
+kaikub
+
+Whitelist status
+● Active
+
+Server
+● Online
+6 / 30 players
+
+[ Copy Server IP ]
+[ Open Discord ]
+```
+
+Useful status values:
+
+* Not registered
+* Pending approval
+* Approved
+* Active
+* Rejected
+* Removed
+* Banned
+
+Also allow the player to request a username change, but do not let them change it freely without removing the old username from the whitelist.
+
+---
+
+## 6. Server rules page
+
+Keep rules readable and not overly long.
+
+Example sections:
+
+### Community
+
+* Respect other players.
+* No harassment, discrimination, or impersonation.
+* Do not intentionally ruin other players’ experience.
+
+### Gameplay
+
+* No cheating, x-ray, duplication exploits, or hacked clients.
+* Do not grief or steal from protected areas.
+* PvP requires agreement unless inside a designated PvP area.
+
+### Server performance
+
+* Avoid machines that intentionally cause lag.
+* Ask an admin before building extremely large farms.
+* Report bugs instead of exploiting them.
+
+Add:
+
+```text
+By registering, you agree to follow these rules.
+```
+
+---
+
+## 7. Live server status
+
+A status widget makes the website feel active.
+
+```text
+Server Status
+
+● Online
+6 / 30 players
+Version 1.21.4
+Latency 42 ms
+```
+
+Optionally display online player names, but let players hide themselves for privacy.
+
+You can update this using a Minecraft server status query without exposing RCON.
+
+---
+
+## 8. News and announcements
+
+A small section on the home page:
+
+```text
+Latest Updates
+
+27 July 2026
+New community shop area is now open.
+
+25 July 2026
+Server upgraded to Paper 1.21.4.
+
+20 July 2026
+Weekend building competition announced.
+```
+
+This can later connect to Discord announcements.
+
+---
+
+## 9. Player guide
+
+New players should not need to ask the same questions repeatedly.
+
+Include:
+
+* How to join the server
+* Required Minecraft version
+* How land claiming works
+* How the economy works
+* How to create a shop
+* Important commands
+* What to do when they cannot connect
+
+Example:
+
+```text
+How to join
+
+1. Open Minecraft Java Edition.
+2. Select Multiplayer.
+3. Click Add Server.
+4. Enter mc.ratchaphon.com.
+5. Join after your whitelist status becomes Active.
+```
+
+---
+
+## 10. Admin dashboard
+
+This page should require an admin role.
+
+### Whitelist requests
+
+| Player    | Discord   |     Submitted | Status  | Action           |
+| --------- | --------- | ------------: | ------- | ---------------- |
+| kaikub    | @kaikub   | 2 minutes ago | Pending | Approve / Reject |
+| Bookdodo5 | @bookdodo |    1 hour ago | Active  | Remove           |
+
+Admin actions:
+
+* Approve registration
+* Reject registration
+* Add whitelist manually
+* Remove from whitelist
+* View RCON result
+* Retry failed command
+* Add admin notes
+* Search players
+* View registration history
+
+### Confirmation dialog
+
+Before removing someone:
+
+```text
+Remove “kaikub” from the whitelist?
+
+The player will no longer be able to join the server.
+
+[ Cancel ] [ Remove Player ]
+```
+
+---
+
+## 11. Audit log
+
+This is important because the system controls server access.
+
+```text
+Activity Log
+
+23:41 — Admin kaikub approved Bookdodo5
+23:40 — Whitelist command completed successfully
+22:18 — User Somchai submitted a registration
+21:55 — Admin kaikub removed TestPlayer
+```
+
+Record:
+
+* Who performed the action
+* Minecraft username
+* Time
+* Previous status
+* New status
+* RCON result
+
+---
+
+## 12. Error states
+
+Design these before coding.
+
+### Invalid username
+
+```text
+This Minecraft username is invalid.
+Use 3–16 letters, numbers, or underscores.
+```
+
+### Already registered
+
+```text
+This Minecraft username is already registered.
+Contact an admin if this account belongs to you.
+```
+
+### Server worker offline
+
+```text
+Your registration was approved, but the server has not processed it yet.
+It will be applied when the server reconnects.
+```
+
+### Minecraft server offline
+
+```text
+The server is currently offline.
+Your whitelist registration is still saved.
+```
+
+---
+
+# Recommended navigation
+
+For normal players:
+
+```text
+Home
+Register
+Server Guide
+Rules
+Status
+Discord
+Account
+```
+
+For admins:
+
+```text
+Admin Dashboard
+Requests
+Players
+Activity Log
+Server Status
+```
+
+---
+
+# Recommended visual style
+
+For your server, I would use a **modern Minecraft dashboard style**, rather than copying Minecraft’s entire blocky interface.
+
+### Style direction
+
+* Dark green or deep navy background
+* Grass-green accent color
+* Off-white cards
+* Pixel-art icons
+* Slightly squared buttons
+* Minecraft landscape screenshots
+* Modern readable fonts for body text
+* Pixel font only for headings
+
+Avoid using pixel fonts for paragraphs because they become difficult to read.
+
+### Example palette
+
+```text
+Background:     #0F1712
+Card:           #18231C
+Primary green:  #55C667
+Light green:    #A6E3A1
+Text:           #F4F7F4
+Secondary text: #AAB8AD
+Error:          #EF6262
+Warning:        #F0B95D
+```
+
+---
+
+# Best MVP version
+
+For the first usable version, build only:
+
+1. Landing page
+2. Discord or Google login
+3. Minecraft username registration form
+4. Rules agreement
+5. Registration status page
+6. Admin approval dashboard
+7. Local worker that automatically updates the whitelist
+8. Basic audit log
+9. Server status widget
+
+Later, add:
+
+* Discord role automation
+* Minecraft skin preview
+* Player statistics
+* News posts
+* Username ownership verification
+* Temporary whitelist access
+* Ban appeals
+* Donations or supporter ranks
+
+The core user journey should remain:
+
+```text
+Open website
+→ Sign in
+→ Enter Minecraft username
+→ Accept rules
+→ Admin approves
+→ Whitelist updates automatically
+→ Copy server IP
+→ Join server
+```

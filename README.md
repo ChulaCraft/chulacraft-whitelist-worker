@@ -1,78 +1,219 @@
-# Docker Paper Minecraft Server
+# Chulacraft
 
-This setup runs a Paper `1.21.11` survival server on hard difficulty with seed `888880777356331877`.
-It uses Java 25 because the current WorldEdit/WorldGuard builds for this server version require it.
+Chulacraft is a self-hosted Minecraft Java Edition server with a public,
+Discord-authenticated registration website. Players sign in, register a valid
+Java account, and receive whitelist access without exposing the Minecraft
+server's administrative interface.
 
-I chose `1.21.11` instead of the newest Paper `26.2` because ProtectionStones is the limiting plugin. Most of the named plugins already support newer Minecraft releases, but ProtectionStones currently advertises `1.21.10+`/`1.21.10-1.21.11` support and has a visible compatibility gap for `26.x`.
+## Architecture
 
-## Included Plugins
+The system is split across managed public services and a private home server:
 
-- LuckPerms
-- spark
-- Grim Anticheat
-- EssentialsX
-- ProtectionStones
-- WorldEdit
-- WorldGuard
-- VaultUnlocked
-- PlaceholderAPI
-
-ProtectionStones and spark are downloaded through Spiget resource IDs in the Dockerfile. The rest are downloaded from Modrinth using `plugins/modrinth-projects.txt`.
-
-The Compose file maps the Minecraft server to the standard host port `25565`. `kaikub` is made an operator automatically at startup. Players on the local network can connect to `192.168.100.7:25565`.
-
-## Run
-
-```bash
-docker compose up -d --build
+```mermaid
+flowchart LR
+    Browser[Player browser] -->|HTTPS| Vercel[Registration website<br/>Vercel]
+    Vercel -->|OAuth/session| Supabase[Supabase Auth + Postgres]
+    Supabase <-->|OAuth| Discord[Discord]
+    Vercel -->|Validate username| Profiles[Minecraft Services API]
+    Worker[Whitelist sync worker<br/>home Docker host] -->|Poll desired state| Supabase
+    Worker -->|Private RCON| Paper[Paper 1.21.11]
+    Game[Java client] -->|TCP 25565| Paper
+    Browser -.->|Poll sync status| Vercel
 ```
 
-Watch startup logs:
+| Component | Location | Responsibility |
+| --- | --- | --- |
+| Next.js application | Vercel | Website, OAuth callback, profile validation, and registration API |
+| Supabase Auth | Supabase | Discord identity and browser sessions |
+| Supabase Postgres | Supabase | Durable registration state, RLS, uniqueness, and rate limiting |
+| Whitelist worker | Home Docker host | Converts desired database state into Paper RCON commands |
+| Paper server | Home Docker host | Minecraft 1.21.11 server, world, plugins, and enforced whitelist |
 
-```bash
-docker compose logs -f minecraft
-```
+The database is the durable handoff between the public website and the private
+server. Vercel never receives the RCON password, and the home server does not
+need to accept inbound web requests.
 
-Stop the server:
+## Registration lifecycle
 
-```bash
-docker compose down
-```
+1. A player opens the website and signs in through Discord.
+2. Supabase creates the authenticated session and returns the player to
+   `/auth/callback`.
+3. The player submits a Minecraft Java username.
+4. The Next.js API verifies the session, rate-limits the request, and resolves
+   the official Minecraft UUID and canonical username.
+5. A protected Supabase function creates the registration with
+   `sync_status = pending`.
+6. The private worker polls the registration, connects to Paper over
+   Docker-internal RCON, and runs `whitelist add <username>`.
+7. The worker records `synced` or schedules a retry; the website automatically
+   displays the updated status.
 
-The world, server files, and plugin config are stored in `./data`.
+One Discord user can own one registration, and a Minecraft UUID can belong to
+only one registration.
 
-## Useful Overrides
-
-Create a `.env` file if you want to change runtime settings:
-
-```env
-MEMORY=6G
-MAX_PLAYERS=20
-RCON_PASSWORD=change-this-password
-MOTD=Hard Survival
-TZ=Asia/Bangkok
-MINECRAFT_PORT=25565
-OPS=kaikub
-```
-
-Do not upgrade `VERSION` to `26.2` unless you also replace or remove ProtectionStones.
-
-## Playing With Friends
-
-The host LAN address is currently `192.168.100.7`. Docker exposes TCP port `25565` on this host. To accept Internet connections, allow the same port in Windows Firewall from an elevated PowerShell:
-
-```powershell
-New-NetFirewallRule -DisplayName "Chulacraft Minecraft TCP 25565" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 25565 -Profile Private
-```
-
-Then create this TCP forwarding rule in the router (UPnP was not available on this network):
+## Repository layout
 
 ```text
-Protocol: TCP
-External port: 25565
-Internal address: 192.168.100.7
-Internal port: 25565
+.
+|-- web/                         Next.js registration application
+|   |-- src/app/                 Pages, OAuth callback, and API route
+|   |-- src/components/          Landing and registration UI
+|   |-- src/lib/                 Supabase clients and domain logic
+|   `-- supabase/migrations/     Database schema, RLS, and RPCs
+|-- minecraft/                   Private server stack
+|   |-- compose.yaml             Paper and whitelist worker services
+|   |-- Dockerfile               Paper 1.21.11 image configuration
+|   |-- plugins/                 Managed plugin list
+|   `-- whitelist-worker/        Supabase-to-RCON reconciliation worker
+`-- IMPLEMENTPLAN/               Product and implementation planning material
 ```
 
-Your friend connects using your public IP address and port `25565`. Keep the PC and Docker Desktop running while testing. A router DHCP reservation for `192.168.100.7` prevents this forwarding rule from breaking after an address change.
-# Chulacraft
+Detailed documentation:
+
+- [`web/README.md`](web/README.md) — web routes, data flow, security, configuration, and deployment
+- [`web/OPERATOR_RUNBOOK.md`](web/OPERATOR_RUNBOOK.md) — launch, troubleshooting, recovery, and secret incidents
+- [`minecraft/README.md`](minecraft/README.md) — Paper server, plugins, networking, and Docker operation
+- [`web/supabase/README.md`](web/supabase/README.md) — database and RLS verification cases
+
+## Trust and secret boundaries
+
+| Environment | Allowed configuration | Must not be present |
+| --- | --- | --- |
+| Browser/Vercel web app | Supabase project URL, publishable key, public site URL, public server address | Supabase backend key, Discord secret, RCON password |
+| Supabase | Discord provider credentials, auth data, registration records | RCON password |
+| Minecraft host | Supabase backend key, RCON password, server configuration | Browser session data or Discord client secret |
+
+RCON listens on the Docker network and localhost only. Public router forwarding
+should expose Minecraft TCP `25565`, never RCON `25575`.
+
+## Public hostname and DNS
+
+The intended public hostname is `mc.ratchaphon.com` for both the website and
+Minecraft Java. Because ordinary DNS does not route by port, Minecraft uses an
+SRV record:
+
+| Type | Name | Value | Proxy |
+| --- | --- | --- | --- |
+| CNAME | `mc` | Exact project CNAME supplied by Vercel | DNS only |
+| A | `minecraft-origin` | Home server's public IPv4 address | DNS only |
+| SRV | `_minecraft._tcp.mc` | Priority `0`, weight `0`, port `25565`, target `minecraft-origin.ratchaphon.com` | Not applicable |
+
+Web browsers resolve `mc.ratchaphon.com` to Vercel. Minecraft Java clients first
+discover the SRV record and connect to the home server on port `25565`. Players
+should enter `mc.ratchaphon.com` without an explicit port.
+
+Cloudflare's normal HTTP proxy does not proxy Minecraft port `25565`, so the
+Minecraft origin record must remain DNS-only.
+
+## First-time setup
+
+### 1. Supabase
+
+Create or select the Supabase project and apply:
+
+```text
+web/supabase/migrations/202607270001_minecraft_registrations.sql
+```
+
+Enable the Discord Auth provider. In the Discord Developer Portal, use:
+
+```text
+https://xtqpulleqbvoroxzheor.supabase.co/auth/v1/callback
+```
+
+In Supabase Auth URL Configuration, use:
+
+```text
+Site URL: https://mc.ratchaphon.com
+Redirect URL: https://mc.ratchaphon.com/auth/callback
+Local redirect: http://localhost:3000/auth/callback
+```
+
+### 2. Web application
+
+Create `web/.env.local` from `web/.env.example`:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_REPLACE_ME
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_MINECRAFT_SERVER_ADDRESS=mc.ratchaphon.com
+```
+
+Then:
+
+```powershell
+Set-Location web
+npm ci
+npm run dev
+```
+
+For production, add the same public values to the Vercel project, set
+`NEXT_PUBLIC_SITE_URL=https://mc.ratchaphon.com`, and redeploy.
+
+### 3. Minecraft host
+
+Create `minecraft/.env` from `minecraft/.env.example` and supply private values:
+
+```env
+RCON_PASSWORD=replace-with-a-strong-password
+SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+SUPABASE_SECRET_KEY=sb_secret_REPLACE_ME
+```
+
+Start the stack from the repository root:
+
+```powershell
+docker compose --env-file minecraft/.env -f minecraft/compose.yaml up -d --build
+```
+
+Inspect health and logs:
+
+```powershell
+docker compose --env-file minecraft/.env -f minecraft/compose.yaml ps
+docker compose --env-file minecraft/.env -f minecraft/compose.yaml logs -f whitelist-sync
+```
+
+Persistent Paper data, world files, and plugin configuration live under
+`minecraft/data/`.
+
+## Verification
+
+Verify the web project:
+
+```powershell
+Set-Location web
+npm run lint
+npm run typecheck
+npm test
+npm run build
+```
+
+Verify the worker:
+
+```powershell
+Set-Location minecraft/whitelist-worker
+npm ci
+npm run check
+npm test
+```
+
+After deployment, complete one end-to-end smoke test:
+
+1. Sign in with a real Discord account.
+2. Register a valid, unclaimed Minecraft Java username.
+3. Confirm the website moves from `pending` to `synced`.
+4. Run `whitelist list` in the Paper console or through local RCON.
+5. Join with `mc.ratchaphon.com`.
+
+## Normal operation
+
+- Start or rebuild: `docker compose --env-file minecraft/.env -f minecraft/compose.yaml up -d --build`
+- Check service health: `docker compose --env-file minecraft/.env -f minecraft/compose.yaml ps`
+- Follow worker logs: `docker compose --env-file minecraft/.env -f minecraft/compose.yaml logs -f whitelist-sync`
+- Follow Paper logs: `docker compose --env-file minecraft/.env -f minecraft/compose.yaml logs -f minecraft`
+- Stop services: `docker compose --env-file minecraft/.env -f minecraft/compose.yaml down`
+
+Back up both the Supabase database and `minecraft/data/`. If the home host is
+offline, registrations remain stored and the worker reconciles them after it
+returns.
