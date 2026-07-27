@@ -7,7 +7,7 @@ services:
     stdin_open: true
     tty: true
     ports:
-      - "${MINECRAFT_PORT:-25566}:25565"
+      - "${MINECRAFT_PORT:-25565}:25565"
       - "127.0.0.1:25575:25575"
       # Uncomment if you add Simple Voice Chat later.
       # - "24454:24454/udp"
@@ -15,7 +15,8 @@ services:
       TZ: "${TZ:-Asia/Bangkok}"
       MEMORY: "${MEMORY:-4G}"
       MAX_PLAYERS: "${MAX_PLAYERS:-20}"
-      RCON_PASSWORD: "${RCON_PASSWORD:-minecraft}"
+      RCON_PASSWORD: "${RCON_PASSWORD:?Set RCON_PASSWORD in .env}"
+      OPS: "${OPS:-kaikub}"
       MOTD: "${MOTD:-Paper 1.21.11 Hard Survival}"
     volumes:
       - ./data:/data
