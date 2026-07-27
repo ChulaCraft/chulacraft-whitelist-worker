@@ -1,0 +1,21 @@
+# Core administration and gameplay plugins.
+luckperms
+essentialsx
+grimac:release
+
+# ProtectionStones dependencies and useful hooks.
+worldedit
+worldguard
+vaultunlocked
+placeholderapi
+
+# Paper 1.21+ already bundles spark, but the Dockerfile also installs the
+# standalone spark Bukkit plugin from SpigotMC and prefers it at startup.
+
+# Optional ideas from the referenced plugin article. Uncomment one at a time,
+# then run: docker compose up -d --build
+# simple-voice-chat?
+# dynmap?
+# dropheads?
+# multiverse-core?
+# griefprevention?
