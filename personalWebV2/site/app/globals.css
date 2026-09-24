@@ -1,0 +1,178 @@
+/* Classical design-system tokens (from the Claude Design handoff _ds/styles.css)
+   plus the site-wide dark theme and section colours (from site.js). */
+
+:root {
+  color-scheme: light dark;
+  --color-bg: #f3f2f2;
+  --color-surface: #eae9e9;
+  --color-text: #201f1d;
+  --color-accent: #b68235;
+  --color-accent-2: #ac803e;
+  --color-divider: color-mix(in srgb, #201f1d 16%, transparent);
+
+  --color-neutral-100: #f8f4f4;
+  --color-neutral-200: #eae7e7;
+  --color-neutral-300: #d7d3d3;
+  --color-neutral-400: #bab6b6;
+  --color-neutral-500: #9b9797;
+  --color-neutral-600: #7d7979;
+  --color-neutral-700: #605d5d;
+  --color-neutral-800: #444141;
+  --color-neutral-900: #2d2b2b;
+
+  --color-accent-100: #fff3e4;
+  --color-accent-200: #ffe3bf;
+  --color-accent-300: #facb8d;
+  --color-accent-400: #e1ad66;
+  --color-accent-500: #c28d41;
+  --color-accent-600: #a06f24;
+  --color-accent-700: #7d5411;
+  --color-accent-800: #5a3b0a;
+  --color-accent-900: #3a270d;
+
+  --color-accent-2-100: #fff3e4;
+  --color-accent-2-200: #ffe3be;
+  --color-accent-2-300: #f5cd96;
+  --color-accent-2-400: #dbaf70;
+  --color-accent-2-500: #bc8f4e;
+  --color-accent-2-600: #9b7232;
+  --color-accent-2-700: #79561f;
+  --color-accent-2-800: #573d14;
+  --color-accent-2-900: #382810;
+
+  --font-heading: var(--font-cormorant), system-ui, sans-serif;
+  --font-heading-weight: 600;
+  --font-body: var(--font-lora), system-ui, sans-serif;
+
+  --space-1: 4.6px;
+  --space-2: 9.2px;
+  --space-3: 13.8px;
+  --space-4: 18.4px;
+  --space-6: 27.6px;
+  --space-8: 36.8px;
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 7px;
+
+  --shadow-sm: 0 1px 2px color-mix(in srgb, #2d2b2b 14%, transparent);
+  --shadow-md: 0 3px 10px color-mix(in srgb, #2d2b2b 16%, transparent);
+  --shadow-lg: 0 12px 32px color-mix(in srgb, #2d2b2b 22%, transparent);
+
+  --sec-about: #A5323F;
+  --sec-experience: #D9782B;
+  --sec-activity: #3C8C68;
+  --sec-certificate: #E0B03A;
+  --sec-interest: #2F63B0;
+}
+
+/* Dark tokens: applied by device preference (unless forced light) or by data-theme=dark. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme=light]) {
+    --sec-about: #EE8791; --sec-experience: #F4AA6C; --sec-activity: #7DCFA5; --sec-certificate: #F4D06E; --sec-interest: #8DB2F2;
+    --color-bg: #161412; --color-surface: #221f1c; --color-text: #ece6df; --color-accent: #d3a05a; --color-accent-2: #cf9f5e;
+    --color-divider: color-mix(in srgb, #ece6df 16%, transparent);
+    --color-neutral-100: #1d1b1a; --color-neutral-200: #2a2726; --color-neutral-300: #3d3a39; --color-neutral-400: #5a5655; --color-neutral-500: #7d7979; --color-neutral-600: #9b9797; --color-neutral-700: #b8b3b2; --color-neutral-800: #d7d3d3; --color-neutral-900: #f1eded;
+    --color-accent-100: #2a1d0b; --color-accent-200: #3f2b0e; --color-accent-300: #6b4a17; --color-accent-400: #94672a; --color-accent-500: #c28d41; --color-accent-600: #dcaa62; --color-accent-700: #ecc48b; --color-accent-800: #f8dcb5; --color-accent-900: #fff0dc;
+    --color-accent-2-100: #2a1d0b; --color-accent-2-200: #3f2b0e; --color-accent-2-300: #6b4a17; --color-accent-2-400: #94672a; --color-accent-2-500: #bc8f4e; --color-accent-2-600: #d8aa6c; --color-accent-2-700: #e9c592; --color-accent-2-800: #f6dcb8; --color-accent-2-900: #fff0dc;
+    --shadow-sm: 0 0 0 1px color-mix(in srgb, #ece6df 6%, transparent), 0 1px 2px rgba(0,0,0,.5);
+    --shadow-md: 0 0 0 1px color-mix(in srgb, #ece6df 7%, transparent), 0 4px 14px rgba(0,0,0,.55);
+    --shadow-lg: 0 0 0 1px color-mix(in srgb, #ece6df 8%, transparent), 0 14px 36px rgba(0,0,0,.6);
+  }
+  :root:not([data-theme=light]) .plate { filter: sepia(0.12) saturate(0.9) contrast(1.02) brightness(.95); }
+  :root:not([data-theme=light]) [data-si] { filter: invert(1) brightness(1.3); }
+}
+:root[data-theme=dark] {
+  color-scheme: dark;
+  --sec-about: #EE8791; --sec-experience: #F4AA6C; --sec-activity: #7DCFA5; --sec-certificate: #F4D06E; --sec-interest: #8DB2F2;
+  --color-bg: #161412; --color-surface: #221f1c; --color-text: #ece6df; --color-accent: #d3a05a; --color-accent-2: #cf9f5e;
+  --color-divider: color-mix(in srgb, #ece6df 16%, transparent);
+  --color-neutral-100: #1d1b1a; --color-neutral-200: #2a2726; --color-neutral-300: #3d3a39; --color-neutral-400: #5a5655; --color-neutral-500: #7d7979; --color-neutral-600: #9b9797; --color-neutral-700: #b8b3b2; --color-neutral-800: #d7d3d3; --color-neutral-900: #f1eded;
+  --color-accent-100: #2a1d0b; --color-accent-200: #3f2b0e; --color-accent-300: #6b4a17; --color-accent-400: #94672a; --color-accent-500: #c28d41; --color-accent-600: #dcaa62; --color-accent-700: #ecc48b; --color-accent-800: #f8dcb5; --color-accent-900: #fff0dc;
+  --color-accent-2-100: #2a1d0b; --color-accent-2-200: #3f2b0e; --color-accent-2-300: #6b4a17; --color-accent-2-400: #94672a; --color-accent-2-500: #bc8f4e; --color-accent-2-600: #d8aa6c; --color-accent-2-700: #e9c592; --color-accent-2-800: #f6dcb8; --color-accent-2-900: #fff0dc;
+  --shadow-sm: 0 0 0 1px color-mix(in srgb, #ece6df 6%, transparent), 0 1px 2px rgba(0,0,0,.5);
+  --shadow-md: 0 0 0 1px color-mix(in srgb, #ece6df 7%, transparent), 0 4px 14px rgba(0,0,0,.55);
+  --shadow-lg: 0 0 0 1px color-mix(in srgb, #ece6df 8%, transparent), 0 14px 36px rgba(0,0,0,.6);
+}
+:root[data-theme=dark] .plate { filter: sepia(0.12) saturate(0.9) contrast(1.02) brightness(.95); }
+:root[data-theme=dark] [data-si] { filter: invert(1) brightness(1.3); }
+:root[data-theme=light] { color-scheme: light; }
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { overflow-x: clip; }
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 15px; line-height: 1.55; font-weight: 400;
+}
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  line-height: 1.12; letter-spacing: -0.015em; margin: 0 0 var(--space-2);
+}
+p { margin: 0 0 var(--space-3); }
+a { color: var(--color-accent-700); text-decoration: none; text-underline-offset: 3px; }
+/* Each page sets --link-hover to its section colour. */
+a:hover { color: var(--link-hover, var(--color-accent-800)); }
+img { display: block; max-width: 100%; }
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+::selection { background: color-mix(in srgb, var(--color-accent) 30%, transparent); }
+
+.plate {
+  filter: sepia(0.22) saturate(0.82) contrast(1.05);
+  border: 6px solid var(--color-surface); outline: 1px solid var(--color-divider);
+}
+
+/* — Classical buttons and tags — */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  cursor: pointer; text-decoration: none;
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 14px; line-height: 1.2; color: var(--color-text);
+  background: transparent; border: 1px solid transparent;
+  padding: var(--space-2) calc(var(--space-3) * 1.2);
+  border-radius: var(--radius-md);
+}
+.btn-secondary { border-color: var(--color-divider); }
+.btn-secondary:hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+.btn-secondary:active { background: color-mix(in srgb, var(--color-text) 14%, transparent); }
+.btn-ghost { color: var(--color-accent); padding-inline: var(--space-1); }
+.btn-ghost:hover { background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
+.btn-ghost:active { background: color-mix(in srgb, var(--color-accent) 18%, transparent); }
+.tag {
+  display: inline-flex; align-items: center; font-size: 11px;
+  letter-spacing: 0.02em; padding: 3px 10px;
+  border-radius: calc(var(--radius-md) * 0.75);
+}
+.tag-outline { border: 1px solid var(--color-accent); color: var(--color-accent); }
+
+.hover-wash:hover { background: color-mix(in oklch, var(--color-text) 7%, transparent) !important; }
+.chip:hover { border-color: var(--color-accent) !important; }
+.repo:hover { border-color: var(--sec-interest) !important; }
+
+@keyframes site-orbit { to { transform: rotate(360deg); } }
+@keyframes site-breathe { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+#site-loader {
+  position: fixed; inset: 0; z-index: 2147483000;
+  background: var(--color-bg); color: var(--color-text); font-family: var(--font-body);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
+  transition: opacity 450ms ease, visibility 0s linear 450ms;
+}
+#site-loader[data-hidden] { opacity: 0; visibility: hidden; pointer-events: none; }
+#site-loader[data-fast] { transition: opacity 220ms ease; }
+@media (prefers-reduced-motion: reduce) { #site-loader * { animation-play-state: paused !important; } }
+
+#site-theme {
+  position: fixed; right: 16px; bottom: 92px; z-index: 2147482000;
+  width: 44px; height: 44px; border-radius: 50%; padding: 0;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  color: var(--color-text);
+  background: color-mix(in oklch, var(--color-bg) 70%, transparent);
+  backdrop-filter: blur(16px) saturate(1.5); -webkit-backdrop-filter: blur(16px) saturate(1.5);
+  border: 1px solid color-mix(in oklch, var(--color-text) 12%, transparent);
+  box-shadow: var(--shadow-md);
+}
+#site-theme:hover { background: color-mix(in oklch, var(--color-text) 8%, var(--color-bg)); }
+#site-theme:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }

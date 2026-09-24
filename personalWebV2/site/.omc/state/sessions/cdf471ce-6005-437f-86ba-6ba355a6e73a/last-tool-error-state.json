@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"ls ~/.cache/ms-playwright 2>/dev/null; which chromium chromium-browser google-chrome firefox 2>/dev/null\",\"description\":\"Look for installed browsers\"}",
+  "error": "Exit code 1\nchromium-1228\nchromium-1234\nchromium-1243\nchromium_headless_shell-1228\nchromium_headless_shell-1234\nchromium_headless_shell-1243\nffmpeg-1011\nfirefox-1538\nwebkit-2336\n/usr/bin/firefox",
+  "timestamp": "2026-09-24T10:59:53.274Z",
+  "retry_count": 1
+}
