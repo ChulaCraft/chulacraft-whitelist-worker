@@ -1,4 +1,4 @@
-FROM node:22-alpine
+FROM node:24-alpine
 
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -9,4 +9,5 @@ RUN mkdir -p /run/whitelist-worker \
     && chmod 0700 /run/whitelist-worker
 
 USER node
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s CMD ["node", "healthcheck.cjs"]
 CMD ["node", "worker.cjs"]

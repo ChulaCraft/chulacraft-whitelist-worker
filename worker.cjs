@@ -48,6 +48,9 @@ async function syncRecord(record) {
   try {
     const response = await command(`whitelist ${action} ${record.minecraft_username}`);
     if (/unknown command|incorrect argument|usage:/i.test(response)) throw new Error("RCON_REJECTED");
+    // Removal means revoked, banned or deleted, so an online player must not keep playing.
+    // Best-effort: "No player was found" for offline players is expected and ignored.
+    if (action === "remove") await command(`kick ${record.minecraft_username} Your server access was removed.`).catch(() => undefined);
     if (await markSuccess(record)) { log("sync_succeeded", { registrationId: record.id, username: record.minecraft_username, action }); return true; }
     log("sync_result_stale", { registrationId: record.id, username: record.minecraft_username });
     return false;
