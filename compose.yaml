@@ -1,0 +1,32 @@
+name: chulacraft-whitelist
+
+services:
+  whitelist-sync:
+    image: ghcr.io/chulacraft/whitelist-worker:${WHITELIST_WORKER_TAG:-latest}
+    container_name: chulacraft-whitelist-sync
+    restart: unless-stopped
+    init: true
+    # Host networking so the worker reaches RCON on 127.0.0.1 whether Paper runs
+    # under systemd or in another container that publishes 127.0.0.1:25575.
+    # The worker listens on no ports, so this exposes nothing.
+    network_mode: host
+    environment:
+      SUPABASE_URL: "${SUPABASE_URL:?Set SUPABASE_URL in .env}"
+      SUPABASE_SECRET_KEY: "${SUPABASE_SECRET_KEY:?Set SUPABASE_SECRET_KEY in .env}"
+      RCON_HOST: "${RCON_HOST:-127.0.0.1}"
+      RCON_PORT: "${RCON_PORT:-25575}"
+      RCON_PASSWORD: "${RCON_PASSWORD:?Set RCON_PASSWORD in .env}"
+      POLL_INTERVAL_MS: "${POLL_INTERVAL_MS:-8000}"
+    read_only: true
+    tmpfs:
+      # Heartbeat file read by the image's HEALTHCHECK; owned by the node user.
+      - /run/whitelist-worker:uid=1000,gid=1000,mode=0700
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
