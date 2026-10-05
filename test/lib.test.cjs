@@ -17,11 +17,10 @@ test("retry backoff grows and caps at five minutes", () => {
   assert.equal(nextRetry(1, 0), "1970-01-01T00:00:10.000Z");
 });
 
-test("RCON failures are categorized without echoing messages", () => {
-  assert.equal(safeError(new Error("Connection ECONNREFUSED")), "RCON_OFFLINE");
-  assert.equal(safeError(new Error("request timed out")), "RCON_TIMEOUT");
+test("failures are categorized without echoing messages", () => {
+  assert.equal(safeError(new Error("SERVER_OFFLINE")), "SERVER_OFFLINE");
   assert.equal(safeError(new Error("SUPABASE_READ_FAILED")), "SUPABASE_ERROR");
-  assert.equal(safeError(new Error("bad command")), "RCON_REJECTED");
+  assert.equal(safeError(new Error("EACCES: permission denied")), "COMMAND_FAILED");
   assert.equal(safeError(new Error("SUPABASE_TIMEOUT")), "SUPABASE_TIMEOUT");
 });
 

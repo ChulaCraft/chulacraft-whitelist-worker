@@ -1,4 +1,4 @@
-// Stub RCON TCP server and stub PostgREST endpoint used by the end-to-end test.
+// Stub PostgREST endpoint and game port used by the end-to-end tests.
 const http = require("node:http");
 const net = require("node:net");
 
@@ -14,41 +14,6 @@ function makeRow(overrides) {
       revoked_at: null
     },
     overrides || {}
-  );
-}
-
-// Answers the auth handshake and replies "Success" to every command.
-function startRcon(options) {
-  const response = (options && options.response) || "Success";
-  const received = [];
-  const server = net.createServer((socket) => {
-    let buffer = Buffer.alloc(0);
-    socket.on("data", (chunk) => {
-      buffer = Buffer.concat([buffer, chunk]);
-      while (buffer.length >= 4) {
-        const size = buffer.readInt32LE(0);
-        if (size <= 0 || buffer.length < size + 4) return;
-        const body = buffer.subarray(4, size + 4);
-        buffer = buffer.subarray(size + 4);
-        const requestId = body.readInt32LE(0);
-        const type = body.readInt32LE(4);
-        if (type !== 3) received.push(body.subarray(8, body.length - 2).toString("utf8"));
-        const text = Buffer.from(response, "utf8");
-        const out = Buffer.alloc(14 + text.length);
-        // The length field counts everything after itself: id + type + payload
-        // + two trailing nulls. Getting this wrong stalls the client's splitter.
-        out.writeInt32LE(out.length - 4, 0);
-        out.writeInt32LE(requestId, 4);
-        out.writeInt32LE(2, 8);
-        text.copy(out, 12);
-        socket.write(out);
-      }
-    });
-  });
-  return new Promise((resolve) =>
-    server.listen(0, "127.0.0.1", () =>
-      resolve({ received, port: server.address().port, close: () => server.close() })
-    )
   );
 }
 
@@ -108,4 +73,4 @@ function startGamePort() {
   );
 }
 
-module.exports = { makeRow, startGamePort, startRcon, startSupabase };
+module.exports = { makeRow, startGamePort, startSupabase };

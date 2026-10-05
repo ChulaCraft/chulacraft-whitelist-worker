@@ -5,12 +5,11 @@
   "type": "commonjs",
   "scripts": {
     "start": "node worker.cjs",
-    "check": "node --check worker.cjs && node --check healthcheck.cjs && node --check lib.cjs && node --check bounded-fetch.cjs",
+    "check": "node --check worker.cjs && node --check lib.cjs && node --check bounded-fetch.cjs",
     "test": "node --test test/*.test.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
-    "rcon-client": "^4.2.5",
     "ws": "^8.21.3"
   }
 }

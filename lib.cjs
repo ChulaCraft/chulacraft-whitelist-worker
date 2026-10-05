@@ -14,9 +14,8 @@ function safeError(error) {
   const message = error instanceof Error ? error.message : "unknown";
   if (/SUPABASE_TIMEOUT/i.test(message)) return "SUPABASE_TIMEOUT";
   if (/SUPABASE_(READ|UPDATE)_FAILED/i.test(message)) return "SUPABASE_ERROR";
-  if (/timeout|timed out/i.test(message)) return "RCON_TIMEOUT";
-  if (/connect|socket|ECONN|closed/i.test(message)) return "RCON_OFFLINE";
-  return "RCON_REJECTED";
+  if (/SERVER_OFFLINE/.test(message)) return "SERVER_OFFLINE";
+  return "COMMAND_FAILED";
 }
 
 function isDue(value, now) {
