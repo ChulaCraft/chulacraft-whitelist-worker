@@ -15,6 +15,8 @@ services:
       SUPABASE_SECRET_KEY: "${SUPABASE_SECRET_KEY:?Set SUPABASE_SECRET_KEY in .env}"
       RCON_HOST: "${RCON_HOST:-127.0.0.1}"
       RCON_PORT: "${RCON_PORT:-25575}"
+      # The container has no /run/minecraft, so it always uses RCON. Paper/Folia
+      # silently disable RCON on a blank password, so refuse to start without one.
       RCON_PASSWORD: "${RCON_PASSWORD:?Set RCON_PASSWORD in .env}"
       POLL_INTERVAL_MS: "${POLL_INTERVAL_MS:-8000}"
     read_only: true

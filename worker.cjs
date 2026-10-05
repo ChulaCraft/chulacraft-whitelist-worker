@@ -1,26 +1,119 @@
 const fs = require("node:fs");
+const net = require("node:net");
+const { parseArgs } = require("node:util");
 const { createClient } = require("@supabase/supabase-js");
-const { Rcon } = require("rcon-client");
 const { validName, nextRetry, safeError } = require("./lib.cjs");
 const { createBoundedFetch } = require("./bounded-fetch.cjs");
 
+// --server-name selects the managed server instance. It is required by the
+// systemd stdin transport and ignored by the RCON transport.
+const options = {
+  "server-name": { type: "string", default: "chulacraft" },
+  "heartbeat-file": { type: "string" }
+};
+
+const { values } = parseArgs({ options });
+
+const NODE_MAJOR_VERSION = parseInt(process.versions.node.split(".")[0], 10);
+
 const supabaseSecret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
-const required = ["SUPABASE_URL", "RCON_PASSWORD"];
+const required = ["SUPABASE_URL"];
 for (const key of required) if (!process.env[key]) throw new Error(`Missing required environment variable: ${key}`);
 if (!supabaseSecret) throw new Error("Missing required environment variable: SUPABASE_SECRET_KEY");
 
-const supabase = createClient(process.env.SUPABASE_URL, supabaseSecret, { auth: { persistSession: false, autoRefreshToken: false }, global: { fetch: createBoundedFetch(8000) } });
+// Node < 22 has no global WebSocket, so supabase-js needs the ws polyfill.
+let realtime = undefined;
+if (NODE_MAJOR_VERSION < 22) realtime = { transport: "ws" };
+
+const supabase = createClient(process.env.SUPABASE_URL, supabaseSecret, { auth: { persistSession: false, autoRefreshToken: false }, global: { fetch: createBoundedFetch(8000) }, realtime });
 const pollInterval = Number(process.env.POLL_INTERVAL_MS || 8000);
-const rconOptions = { host: process.env.RCON_HOST || "minecraft", port: Number(process.env.RCON_PORT || 25575), password: process.env.RCON_PASSWORD, timeout: 8000 };
+
+// Two transports. The systemd stdin socket is preferred whenever it exists: it
+// needs no password and is not exposed on a port. RCON is used for Docker and
+// for instances without a stdin socket.
+//
+// The systemd unit uses RuntimeDirectory=minecraft, so the instance stdin socket
+// lives in /run/minecraft. The directory is overridable so the transport can be
+// exercised in tests without root.
+const runDir = process.env.MINECRAFT_RUN_DIR || "/run/minecraft";
+const serverStdin = `${runDir}/${values["server-name"]}.stdin`;
+const rconOptions = { host: process.env.RCON_HOST || "127.0.0.1", port: Number(process.env.RCON_PORT || 25575), password: process.env.RCON_PASSWORD, timeout: 8000 };
+
+// Re-evaluated per command: the worker can start before its instance does, and
+// the server may restart underneath it. Pinning the choice at startup would
+// strand the worker on RCON for its whole life.
+function useStdin() { return fs.existsSync(serverStdin); }
+
+// The stdin transport gets no reply, so the game port is its only evidence
+// that a server is there to read the command.
+const serverPort = Number(process.env.MINECRAFT_PORT || 25565);
+function serverListening() {
+  return new Promise((resolve) => {
+    const socket = net.connect({ host: "127.0.0.1", port: serverPort });
+    const finish = (up) => { socket.destroy(); resolve(up); };
+    socket.setTimeout(2000, () => finish(false));
+    socket.once("connect", () => finish(true));
+    socket.once("error", () => finish(false));
+  });
+}
+
+// Absent under systemd, where the unit's hardening forbids writing outside its
+// own allowed paths; the systemd unit tracks health itself.
+const heartbeatFile = values["heartbeat-file"] || "/run/whitelist-worker/heartbeat";
+
+let rconSession = null;
 
 function log(event, details = {}) { console.log(JSON.stringify({ time: new Date().toISOString(), service: "whitelist-sync", event, ...details })); }
-function heartbeat() { fs.writeFileSync("/run/whitelist-worker/heartbeat", "ok", { mode: 0o600 }); }
 function supabaseFailureCode(error, fallback) { return /SUPABASE_TIMEOUT/i.test(error?.message || "") ? "SUPABASE_TIMEOUT" : fallback; }
 
-async function command(command) {
-  let rcon;
-  try { rcon = await Rcon.connect(rconOptions); return await rcon.send(command); }
-  finally { if (rcon) await rcon.end().catch(() => undefined); }
+// Best-effort liveness marker for the container HEALTHCHECK. Absent under
+// systemd, where the unit's hardening forbids writing outside its own paths.
+function heartbeat() {
+  if (!heartbeatFile) return;
+  try { fs.writeFileSync(heartbeatFile, "ok", { mode: 0o600 }); }
+  catch { /* read-only runtime dir: health is tracked by the systemd unit instead */ }
+}
+
+async function closeRcon() {
+  const session = rconSession;
+  if (!session) return;
+  rconSession = null;
+  try { await (await session).end(); } catch { /* connection already gone */ }
+}
+
+// Each command opens its own short-lived RCON session so a broken socket can
+// never poison the next poll. The stdin transport needs no session at all.
+async function command(text) {
+  if (useStdin()) {
+    // systemd keeps the FIFO open while the instance is stopped, so a write
+    // succeeding proves nothing. Defer unless the server is actually up.
+    if (!(await serverListening())) throw new Error("socket closed");
+    let fd;
+    try {
+      // Append, never truncate or create: a removal sends two commands in a
+      // row. Non-blocking, so a FIFO with no reader fails with ENXIO instead of
+      // hanging the worker, and a full one fails with EAGAIN.
+      fd = fs.openSync(serverStdin, fs.constants.O_WRONLY | fs.constants.O_APPEND | fs.constants.O_NONBLOCK);
+      fs.writeSync(fd, text + "\n");
+    }
+    catch (error) {
+      // Nobody is reading the instance's stdin. Report it as an offline server
+      // so the record is deferred instead of consuming a retry.
+      if (["ENOENT", "ENXIO", "EPIPE", "EAGAIN"].includes(error?.code)) throw new Error("socket closed");
+      throw error;
+    }
+    finally { if (fd !== undefined) fs.closeSync(fd); }
+    return "";
+  }
+  try {
+    // Imported lazily: the systemd deployment has no rcon-client installed.
+    // There, a missing stdin socket means the server is stopped, so report it
+    // as offline rather than as a rejected command.
+    const { Rcon } = await import("rcon-client").catch(() => { throw new Error("socket closed"); });
+    rconSession = Rcon.connect(rconOptions);
+    const session = await rconSession;
+    return await session.send(text);
+  } finally { await closeRcon(); }
 }
 
 async function markSuccess(record) {
@@ -34,8 +127,15 @@ async function markSuccess(record) {
 }
 
 async function markFailure(record, code) {
-  const attempts = Number(record.sync_attempts || 0) + 1;
   const now = new Date().toISOString();
+  // The server being down is not a per-player failure. Counting these against
+  // sync_attempts would park every registration outside the retry window and
+  // stall the whole queue, so leave the row due for the next pass instead.
+  if (code === "RCON_OFFLINE" || code === "RCON_TIMEOUT") {
+    log("sync_deferred", { registrationId: record.id, username: record.minecraft_username, code });
+    return;
+  }
+  const attempts = Number(record.sync_attempts || 0) + 1;
   const { data, error } = await supabase.from("minecraft_registrations").update({ sync_status: "failed", sync_attempts: attempts, next_sync_at: nextRetry(attempts), last_sync_error_code: code, last_sync_error_at: now }).eq("id", record.id).eq("desired_whitelisted", record.desired_whitelisted).select("id");
   if (error) throw new Error(supabaseFailureCode(error, "SUPABASE_UPDATE_FAILED"));
   if ((data || []).length !== 1) { log("sync_result_stale", { registrationId: record.id, username: record.minecraft_username }); return; }
@@ -95,17 +195,17 @@ async function pollForever() {
   while (true) {
     try { await runPass(false); }
     catch (error) { log("poll_failed", { code: safeError(error) }); }
-    // Deliberately await before starting another pass: RCON and Supabase work
-    // must not overlap between polls, even when a batch takes longer than its
-    // configured interval.
+    // Deliberately await before starting another pass: server commands and
+    // Supabase work must not overlap between polls, even when a batch takes
+    // longer than its configured interval.
     await delay(pollInterval);
   }
 }
 
 async function main() {
-  log("worker_started", { pollInterval });
+  log("worker_started", { pollInterval, transport: useStdin() ? "stdin" : "rcon", serverName: values["server-name"] });
   try { await runPass(true); } catch (error) { log("startup_reconciliation_failed", { code: safeError(error) }); }
   void pollForever();
-  setInterval(heartbeat, 10_000).unref();
+  if (heartbeatFile) setInterval(heartbeat, 10_000).unref();
 }
 main().catch((error) => { log("worker_fatal", { code: safeError(error) }); process.exit(1); });
