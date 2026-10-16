@@ -67,7 +67,7 @@ function serverListening() {
 async function command(text) {
   // systemd keeps the FIFO open while the instance is stopped, so a write
   // succeeding proves nothing. Defer unless the server is actually up.
-  if (!(await serverListening())) throw new Error("SERVER_OFFLINE");
+  // if (!(await serverListening())) throw new Error("SERVER_OFFLINE");
   let fd;
   try {
     // Append, never truncate or create: a removal sends two commands in a
@@ -77,7 +77,8 @@ async function command(text) {
     fs.writeSync(fd, text + "\n");
   }
   catch (error) {
-    if (["ENOENT", "ENXIO", "EPIPE", "EAGAIN"].includes(error?.code)) throw new Error("SERVER_OFFLINE");
+    if (error?.code == "ENOENT") throw new Error("SERVER_OFFLINE");
+    // if (["ENXIO", "EPIPE", "EAGAIN"].includes(error?.code)) throw new Error("SERVER_OFFLINE");
     throw error;
   }
   finally { if (fd !== undefined) fs.closeSync(fd); }
