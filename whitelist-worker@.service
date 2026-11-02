@@ -1,0 +1,39 @@
+[Unit]
+Description=Minecraft Whitelist Worker %i
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=mcsv
+Group=mcsv-mgr
+UMask=0002
+
+WorkingDirectory=/srv/minecraft/workers/%i/whitelist/
+
+ExecStart=/usr/bin/node /srv/minecraft/shared/whitelist-worker/worker.cjs \
+  --server-name %i
+
+# stdin control
+StandardInput=null
+
+# logging
+StandardOutput=journal
+StandardError=journal
+
+Restart=on-failure
+
+# safety
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+
+ReadWritePaths=/srv/minecraft/instances/%i
+ReadWritePaths=/srv/minecraft/workers/%i/whitelist/
+ReadOnlyPaths=/srv/minecraft/shared/whitelist-worker/
+EnvironmentFile=/srv/minecraft/workers/%i/whitelist/.env
+
+[Install]
+WantedBy=multi-user.target

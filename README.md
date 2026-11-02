@@ -20,6 +20,21 @@ checks the instance's `server-port` (from its `server.properties`) accepts
 connections. If not, it logs `sync_deferred` and leaves the record due without
 counting an attempt: a down server is not a per-player error.
 
+## Installation
+
+```sh
+cp *.cjs package.json package-lock.json /srv/minecraft/shared/whitelist-worker
+chmod -R g+rw /srv/minecraft/shared/whitelist-worker/
+```
+
+per server
+```sh
+mkdir -p /srv/minecraft/workers/$SERVER_NAME/whitelist/
+touch /srv/minecraft/workers/$SERVER_NAME/whitelist/.env
+
+cp -T system-config/whitelist-worker@.service /etc/systemd/system/whitelist-worker@$SERVER_NAME.service
+```
+
 ## Configuration
 
 | Variable | Required | Default |
@@ -39,8 +54,7 @@ Never give the website the secret key.
 ## Run
 
 Run exactly one worker per server instance, as the
-`whitelist-worker@<instance>.service` template unit in
-[chulacraft-minecraft](https://github.com/ChulaCraft/chulacraft-minecraft).
+[whitelist-worker@.service](whitelist-worker@.service) template unit
 It reads `/srv/minecraft/workers/<instance>/whitelist/.env`; logs go to the
 journal (`journalctl -u whitelist-worker@<instance>`).
 
